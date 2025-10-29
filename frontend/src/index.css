@@ -1,0 +1,24 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom component classes for admin panel */
+.admin-nav {
+  @apply w-64 h-screen bg-gray-100 p-5 fixed;
+}
+.admin-main {
+  @apply ml-64 p-5;  /* Offset for fixed nav */
+  width: 100%;
+}
+.admin-card {
+  @apply border border-gray-300 p-5 rounded-lg shadow-sm bg-white;
+}
+.admin-table {
+  @apply w-full border-collapse bg-white rounded-lg overflow-hidden shadow-sm;
+}
+.admin-btn {
+  @apply px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 mr-2;
+}
+.admin-input {
+  @apply border border-gray-300 px-3 py-2 rounded mr-2;
+}
