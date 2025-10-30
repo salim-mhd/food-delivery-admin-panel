@@ -26,7 +26,7 @@ cp .env
 - Build: `npm run build`
 - Start: `npm start`
 
-***------------------------------------***
+
 
 ## Frontend (React TS)
 
