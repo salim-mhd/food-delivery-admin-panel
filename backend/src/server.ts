@@ -17,7 +17,7 @@ const app: Application = express();
 const PORT = process.env.PORT || 5001;
 
 // Middleware
-app.use(cors());
+app.use(cors({ origin: process.env.FRONTEND_URL || '*' }));
 app.use(bodyParser.json());
 
 // MongoDB Connection
