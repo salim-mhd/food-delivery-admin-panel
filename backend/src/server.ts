@@ -1,10 +1,10 @@
 import express, { Application } from 'express';
-import mongoose from 'mongoose';
 import cors from 'cors';
 import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
+import { connectDB } from './config/db';
 
-// Import routes as ES modules (default exports)
+// Import routes
 import usersRouter from './routes/users';
 import categoriesRouter from './routes/categories';
 import productsRouter from './routes/products';
@@ -21,9 +21,7 @@ app.use(cors({ origin: process.env.FRONTEND_URL || '*' }));
 app.use(bodyParser.json());
 
 // MongoDB Connection
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/')
-  .then(() => console.log('MongoDB connected'))
-  .catch((err) => console.error('MongoDB connection error:', err));
+connectDB();
 
 // Routes
 app.use('/api/users', usersRouter);
