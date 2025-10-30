@@ -1,24 +1,19 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Category } from '../types/types';
-import api from '../lib/axios';
 import { alertSuccess, alertError, confirmDialog } from '../lib/alert';
 import CommonTable, { TableColumn } from './common/CommonTable';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { fetchCategories, createCategory, updateCategory, deleteCategory } from '../store/slices/categoriesSlice';
 
 const CategoriesManagement: React.FC = () => {
-  const [categories, setCategories] = useState<Category[]>([]);
+  const dispatch = useAppDispatch();
+  const { items: categories, loading, error } = useAppSelector(s => s.categories);
   const [formData, setFormData] = useState<Partial<Category>>({ name: '', description: '' });
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [error, setError] = useState<string>('');
 
   useEffect(() => {
-    fetchCategories();
-  }, []);
-
-  const fetchCategories = (): void => {
-    api.get<Category[]>('categories')
-      .then(res => setCategories(res.data))
-      .catch(err => setError('Error fetching categories'));
-  };
+    dispatch(fetchCategories());
+  }, [dispatch]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -27,22 +22,20 @@ const CategoriesManagement: React.FC = () => {
   const handleSubmit = (e: React.FormEvent): void => {
     e.preventDefault();
     if (editingId) {
-      api.put(`categories/${editingId}`, formData)
+      dispatch(updateCategory({ id: editingId, data: formData }))
         .then(() => {
           setEditingId(null);
           setFormData({ name: '', description: '' });
-          fetchCategories();
           alertSuccess('Category updated');
         })
-        .catch(err => { setError('Error updating category'); alertError('Update failed', 'Could not update category'); });
+        .catch(() => { alertError('Update failed', 'Could not update category'); });
     } else {
-      api.post('categories', formData)
+      dispatch(createCategory(formData))
         .then(() => {
           setFormData({ name: '', description: '' });
-          fetchCategories();
           alertSuccess('Category added');
         })
-        .catch(err => { setError('Error adding category'); alertError('Create failed', 'Could not add category'); });
+        .catch(() => { alertError('Create failed', 'Could not add category'); });
     }
   };
 
@@ -54,10 +47,10 @@ const CategoriesManagement: React.FC = () => {
   const handleDelete = useCallback(async (id: string): Promise<void> => {
     const ok = await confirmDialog('Delete category?', 'This action cannot be undone', 'Delete');
     if (!ok) return;
-    api.delete(`categories/${id}`)
-      .then(() => { fetchCategories(); alertSuccess('Category deleted'); })
-      .catch(err => { setError('Error deleting category'); alertError('Delete failed', 'Could not delete category'); });
-  }, []);
+    dispatch(deleteCategory(id))
+      .then(() => { alertSuccess('Category deleted'); })
+      .catch(() => { alertError('Delete failed', 'Could not delete category'); });
+  }, [dispatch]);
 
   const columns: Array<TableColumn<Category>> = useMemo(() => ([
     { key: 'name', header: 'Name', className: 'font-medium text-gray-900', accessor: (c) => c.name },

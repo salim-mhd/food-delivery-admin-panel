@@ -1,32 +1,27 @@
-import React, { useEffect, useState } from 'react';
-import { User, Product, OrderItem } from '../types/types';
-import api from '../lib/axios';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Order, OrderItem } from '../types/types';
 import { alertSuccess, alertError } from '../lib/alert';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { fetchUsers } from '../store/slices/usersSlice';
+import { fetchProducts } from '../store/slices/productsSlice';
+import { createOrder, fetchOrders } from '../store/slices/ordersSlice';
+import CommonTable, { TableColumn } from './common/CommonTable';
 
 const OrderCreation: React.FC = () => {
-  const [users, setUsers] = useState<User[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
+  const dispatch = useAppDispatch();
+  const { items: users } = useAppSelector(s => s.users);
+  const { items: products } = useAppSelector(s => s.products);
+  const { items: orders, loading: ordersLoading, error: ordersError } = useAppSelector(s => s.orders);
   const [formData, setFormData] = useState<{ userId: string; items: OrderItem[] }>({ userId: '', items: [] });
   const [selectedProductId, setSelectedProductId] = useState<string>('');
   const [selectedQuantity, setSelectedQuantity] = useState<number>(1);
   const [error, setError] = useState<string>('');
 
   useEffect(() => {
-    fetchUsers();
-    fetchProducts();
-  }, []);
-
-  const fetchUsers = (): void => {
-    api.get<User[]>('users')
-      .then(res => setUsers(res.data))
-      .catch(err => setError('Error fetching users'));
-  };
-
-  const fetchProducts = (): void => {
-    api.get<Product[]>('products')
-      .then(res => setProducts(res.data))
-      .catch(err => setError('Error fetching products'));
-  };
+    dispatch(fetchUsers()).catch(() => setError('Error fetching users'));
+    dispatch(fetchProducts()).catch(() => setError('Error fetching products'));
+    dispatch(fetchOrders()).catch(() => setError('Error fetching orders'));
+  }, [dispatch]);
 
   const addItem = (productId: string, quantity: number): void => {
     const product = products.find(p => p._id === productId);
@@ -85,13 +80,21 @@ const OrderCreation: React.FC = () => {
       ...formData,
       totalAmount: calculateTotal()
     };
-    api.post('orders', orderData)
+    dispatch(createOrder(orderData))
       .then(() => {
         alertSuccess('Order created');
         setFormData({ userId: '', items: [] });
       })
-      .catch(err => { setError('Error creating order'); alertError('Create failed', 'Could not create order'); });
+      .catch(() => { setError('Error creating order'); alertError('Create failed', 'Could not create order'); });
   };
+
+  const orderColumns: Array<TableColumn<Order>> = useMemo(() => ([
+    { key: 'id', header: 'Order #', accessor: (o) => o._id },
+    { key: 'user', header: 'User', accessor: (o) => users.find(u => u._id === o.userId)?.name ?? o.userId },
+    { key: 'items', header: 'Items', accessor: (o) => o.items.length },
+    { key: 'total', header: 'Total', accessor: (o) => `$${o.totalAmount.toFixed(2)}` },
+    { key: 'date', header: 'Date', accessor: (o) => new Date(o.orderDate).toLocaleString() },
+  ]), [users]);
 
   return (
     <div className="space-y-4">
@@ -200,6 +203,16 @@ const OrderCreation: React.FC = () => {
           <button type="submit" disabled={!formData.userId || formData.items.length === 0} className="inline-flex items-center rounded-md bg-gray-900 px-4 py-2 text-white hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed">Create Order</button>
         </div>
       </form>
+      <div className="space-y-3">
+        <h2 className="text-lg font-semibold tracking-tight">All Orders</h2>
+        {ordersError && <p className="text-sm text-red-600">{ordersError}</p>}
+        <CommonTable<Order>
+          columns={orderColumns}
+          data={orders}
+          getRowKey={(row) => row._id}
+          emptyMessage={ordersLoading ? 'Loading orders...' : 'No orders found'}
+        />
+      </div>
     </div>
   );
 };
