@@ -6,7 +6,7 @@ import { DashboardSummary } from '../types/types';
 
 const router = express.Router();
 
-// GET /api/dashboard - Dashboard summary using aggregation
+// GET /api/dashboard
 router.get('/', async (req: Request, res: Response) => {
   try {
     const totalUsers: number = await User.countDocuments();
