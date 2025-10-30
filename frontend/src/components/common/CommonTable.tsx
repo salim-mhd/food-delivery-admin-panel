@@ -15,6 +15,7 @@ export interface CommonTableProps<T> {
   getRowKey: (row: T, index: number) => string;
   emptyMessage?: string;
   tableClassName?: string;
+  isLoading?: boolean;
   // Pagination (controlled or uncontrolled)
   page?: number; // 1-based
   pageSize?: number;
@@ -30,6 +31,7 @@ function CommonTableImpl<T>({
   getRowKey,
   emptyMessage = 'No data',
   tableClassName = '',
+  isLoading = false,
   page = 1,
   pageSize = 10,
   total,
@@ -51,6 +53,24 @@ function CommonTableImpl<T>({
 
   const from = totalCount === 0 ? 0 : (currentPage - 1) * currentPageSize + 1;
   const to = Math.min(totalCount, currentPage * currentPageSize);
+
+  if (isLoading) {
+    // Skeleton loader
+    return (
+      <div className="overflow-x-auto bg-white border border-gray-200 rounded-xl shadow-sm p-4 animate-pulse">
+        <div className="flex gap-2 mb-4">
+          {columns.map(col => (
+            <div key={col.key} className="h-4 w-24 bg-gray-200 rounded" />
+          ))}
+        </div>
+        <div className="space-y-2">
+          {Array.from({ length: 5 }).map((_, idx) => (
+            <div key={idx} className="h-10 w-full bg-gray-100 rounded" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   if (!data || data.length === 0) {
     return (

@@ -1,24 +1,19 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { User } from '../types/types';
-import api from '../lib/axios';
 import { alertSuccess, alertError, confirmDialog } from '../lib/alert';
 import CommonTable, { TableColumn } from './common/CommonTable';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { createUser, deleteUser, fetchUsers, updateUser } from '../store/slices/usersSlice';
 
 const UsersManagement: React.FC = () => {
-  const [users, setUsers] = useState<User[]>([]);
+  const dispatch = useAppDispatch();
+  const { items: users, loading: usersLoading, error: usersError } = useAppSelector(s => s.users);
   const [formData, setFormData] = useState<Partial<User>>({ name: '', email: '', mobile: '' });
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [error, setError] = useState<string>('');
 
   useEffect(() => {
-    fetchUsers();
-  }, []);
-
-  const fetchUsers = (): void => {
-    api.get<User[]>('users')
-      .then(res => setUsers(res.data))
-      .catch(err => setError('Error fetching users'));
-  };
+    dispatch(fetchUsers());
+  }, [dispatch]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -27,22 +22,20 @@ const UsersManagement: React.FC = () => {
   const handleSubmit = (e: React.FormEvent): void => {
     e.preventDefault();
     if (editingId) {
-      api.put(`users/${editingId}`, formData)
+      dispatch(updateUser({ id: editingId, data: formData }))
         .then(() => {
           setEditingId(null);
           setFormData({ name: '', email: '', mobile: '' });
-          fetchUsers();
           alertSuccess('User updated');
         })
-        .catch(err => { setError('Error updating user'); alertError('Update failed', 'Could not update user'); });
+        .catch(() => { alertError('Update failed', 'Could not update user'); });
     } else {
-      api.post('users', formData)
+      dispatch(createUser(formData))
         .then(() => {
           setFormData({ name: '', email: '', mobile: '' });
-          fetchUsers();
           alertSuccess('User added');
         })
-        .catch(err => { setError('Error adding user'); alertError('Create failed', 'Could not add user'); });
+        .catch(() => { alertError('Create failed', 'Could not add user'); });
     }
   };
 
@@ -54,10 +47,10 @@ const UsersManagement: React.FC = () => {
   const handleDelete = useCallback(async (id: string): Promise<void> => {
     const ok = await confirmDialog('Delete user?', 'This action cannot be undone', 'Delete');
     if (!ok) return;
-    api.delete(`users/${id}`)
-      .then(() => { fetchUsers(); alertSuccess('User deleted'); })
-      .catch(err => { setError('Error deleting user'); alertError('Delete failed', 'Could not delete user'); });
-  }, []);
+    dispatch(deleteUser(id))
+      .then(() => { alertSuccess('User deleted'); })
+      .catch(() => { alertError('Delete failed', 'Could not delete user'); });
+  }, [dispatch]);
 
   const columns: Array<TableColumn<User>> = useMemo(() => ([
     { key: 'name', header: 'Name', className: 'font-medium text-gray-900' },
@@ -80,7 +73,7 @@ const UsersManagement: React.FC = () => {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold tracking-tight">Users Management</h1>
       </div>
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {(usersError) && <p className="text-sm text-red-600">{usersError}</p>}
       <form onSubmit={handleSubmit} className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="space-y-1">
@@ -109,6 +102,7 @@ const UsersManagement: React.FC = () => {
         data={users}
         getRowKey={(row) => row._id}
         emptyMessage="No users found"
+        isLoading={usersLoading}
       />
     </div>
   );

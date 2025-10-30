@@ -1,34 +1,24 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Product, Category } from '../types/types';
-import api from '../lib/axios';
 import { alertSuccess, alertError, confirmDialog } from '../lib/alert';
 import CommonTable, { TableColumn } from './common/CommonTable';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { createProduct, deleteProduct, fetchProducts, updateProduct } from '../store/slices/productsSlice';
+import { fetchCategories } from '../store/slices/categoriesSlice';
 
 type ProductWithCategory = Omit<Product, 'categoryId'> & { categoryId: string | Category };
 
 const ProductsManagement: React.FC = () => {
-  const [products, setProducts] = useState<ProductWithCategory[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
+  const dispatch = useAppDispatch();
+  const { items: products, loading: productsLoading, error: productsError } = useAppSelector(s => s.products);
+  const { items: categories, error: categoriesError } = useAppSelector(s => s.categories);
   const [formData, setFormData] = useState<Partial<Product>>({ name: '', categoryId: '', price: null, status: 'active' });
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [error, setError] = useState<string>('');
 
   useEffect(() => {
-    fetchProducts();
-    fetchCategories();
-  }, []);
-
-  const fetchProducts = (): void => {
-    api.get<ProductWithCategory[]>('products')
-      .then(res => setProducts(res.data))
-      .catch(err => setError('Error fetching products'));
-  };
-
-  const fetchCategories = (): void => {
-    api.get<Category[]>('categories')
-      .then(res => setCategories(res.data))
-      .catch(err => setError('Error fetching categories'));
-  };
+    dispatch(fetchProducts());
+    dispatch(fetchCategories());
+  }, [dispatch]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>): void => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -37,22 +27,20 @@ const ProductsManagement: React.FC = () => {
   const handleSubmit = (e: React.FormEvent): void => {
     e.preventDefault();
     if (editingId) {
-      api.put(`products/${editingId}`, formData)
+      dispatch(updateProduct({ id: editingId, data: formData }))
         .then(() => {
           setEditingId(null);
           setFormData({ name: '', categoryId: '', price: null, status: 'active' });
-          fetchProducts();
           alertSuccess('Product updated');
         })
-        .catch(err => { setError('Error updating product'); alertError('Update failed', 'Could not update product'); });
+        .catch(() => { alertError('Update failed', 'Could not update product'); });
     } else {
-      api.post('products', formData)
+      dispatch(createProduct(formData))
         .then(() => {
           setFormData({ name: '', categoryId: '', price: null, status: 'active' });
-          fetchProducts();
           alertSuccess('Product added');
         })
-        .catch(err => { setError('Error adding product'); alertError('Create failed', 'Could not add product'); });
+        .catch(() => { alertError('Create failed', 'Could not add product'); });
     }
   };
 
@@ -66,13 +54,10 @@ const ProductsManagement: React.FC = () => {
   const handleDelete = useCallback(async (id: string): Promise<void> => {
     const ok = await confirmDialog('Delete product?', 'This action cannot be undone', 'Delete');
     if (!ok) return;
-    api.delete(`products/${id}`)
-      .then(() => {
-        setProducts(prev => prev.filter(p => p._id !== id));
-        alertSuccess('Product deleted');
-      })
-      .catch(err => { setError('Error deleting product'); alertError('Delete failed', 'Could not delete product'); });
-  }, []);
+    dispatch(deleteProduct(id))
+      .then(() => { alertSuccess('Product deleted'); })
+      .catch(() => { alertError('Delete failed', 'Could not delete product'); });
+  }, [dispatch]);
 
   const columns: Array<TableColumn<ProductWithCategory>> = useMemo(() => ([
     { key: 'name', header: 'Name' },
@@ -98,7 +83,7 @@ const ProductsManagement: React.FC = () => {
   return (
     <div className="space-y-4">
       <h1 className="text-xl font-semibold tracking-tight">Product Management</h1>
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {(productsError || categoriesError) && <p className="text-sm text-red-600">{productsError || categoriesError}</p>}
       <form onSubmit={handleSubmit} className="bg-white border border-gray-200 rounded-lg p-4 space-y-3">
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
           <input className="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-gray-900" type="text" name="name" placeholder="Name" value={formData.name || ''} onChange={handleInputChange} required />
@@ -126,6 +111,7 @@ const ProductsManagement: React.FC = () => {
         data={products}
         getRowKey={(row) => row._id}
         emptyMessage="No products found"
+        isLoading={productsLoading}
       />
     </div>
   );

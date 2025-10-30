@@ -210,7 +210,8 @@ const OrderCreation: React.FC = () => {
           columns={orderColumns}
           data={orders}
           getRowKey={(row) => row._id}
-          emptyMessage={ordersLoading ? 'Loading orders...' : 'No orders found'}
+          emptyMessage="No orders found"
+          isLoading={ordersLoading}
         />
       </div>
     </div>

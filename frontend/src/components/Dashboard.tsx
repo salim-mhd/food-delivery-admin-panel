@@ -10,10 +10,10 @@ import CommonTable, { TableColumn } from './common/CommonTable';
 
 const Dashboard: React.FC = () => {
   const dispatch = useAppDispatch();
-  const { items: users } = useAppSelector(s => s.users);
-  const { items: products } = useAppSelector(s => s.products);
-  const { items: categories } = useAppSelector(s => s.categories);
-  const { items: orders } = useAppSelector(s => s.orders);
+  const { items: users, loading: usersLoading } = useAppSelector(s => s.users);
+  const { items: products, loading: productsLoading } = useAppSelector(s => s.products);
+  const { items: categories, loading: categoriesLoading } = useAppSelector(s => s.categories);
+  const { items: orders, loading: ordersLoading } = useAppSelector(s => s.orders);
   const { summary: data } = useAppSelector(s => s.dashboard);
 
   useEffect(() => {
@@ -94,6 +94,7 @@ const Dashboard: React.FC = () => {
             getRowKey={(r) => r._id}
             page={1}
             pageSize={5}
+            isLoading={usersLoading}
           />
         </div>
         <div>
@@ -104,6 +105,7 @@ const Dashboard: React.FC = () => {
             getRowKey={(r) => r._id}
             page={1}
             pageSize={5}
+            isLoading={categoriesLoading}
           />
         </div>
         <div>
@@ -114,6 +116,7 @@ const Dashboard: React.FC = () => {
             getRowKey={(r) => r._id}
             page={1}
             pageSize={5}
+            isLoading={productsLoading}
           />
         </div>
         <div>
@@ -124,6 +127,7 @@ const Dashboard: React.FC = () => {
             getRowKey={(r) => r._id}
             page={1}
             pageSize={5}
+            isLoading={ordersLoading}
           />
         </div>
       </div>

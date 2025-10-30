@@ -94,6 +94,7 @@ const CategoriesManagement: React.FC = () => {
         data={categories}
         getRowKey={(row) => row._id}
         emptyMessage="No categories found"
+        isLoading={loading}
       />
     </div>
   );

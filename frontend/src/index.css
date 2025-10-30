@@ -4,10 +4,10 @@
 
 /* Custom component classes for admin panel */
 .admin-nav {
-  @apply w-64 h-screen bg-gray-100 p-5 fixed;
+  @apply w-64 h-screen bg-gray-100 p-5 fixed hidden md:block;
 }
 .admin-main {
-  @apply ml-64 p-5;  /* Offset for fixed nav */
+  @apply p-5 md:ml-64;  /* Offset for fixed nav on md+ */
   width: 100%;
 }
 .admin-card {
