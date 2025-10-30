@@ -59,7 +59,7 @@ const CategoriesManagement: React.FC = () => {
       key: 'actions',
       header: 'Actions',
       render: (c) => (
-        <div className="space-x-2">
+        <div className="flex gap-2">
           <button className="inline-flex items-center rounded-md border border-gray-300 px-3 py-1.5 text-sm hover:bg-gray-50" onClick={() => handleEdit(c)}>Edit</button>
           <button className="inline-flex items-center rounded-md bg-red-50 text-red-700 px-3 py-1.5 text-sm hover:bg-red-100" onClick={() => handleDelete(c._id)}>Delete</button>
         </div>
