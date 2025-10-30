@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import React, { memo, useMemo } from 'react';
 
 export type TableColumn<T> = {
   key: string;
@@ -15,9 +15,43 @@ export interface CommonTableProps<T> {
   getRowKey: (row: T, index: number) => string;
   emptyMessage?: string;
   tableClassName?: string;
+  // Pagination (controlled or uncontrolled)
+  page?: number; // 1-based
+  pageSize?: number;
+  total?: number; // pass when doing server-side pagination
+  onPageChange?: (page: number) => void;
+  onPageSizeChange?: (pageSize: number) => void;
+  pageSizeOptions?: number[];
 }
 
-function CommonTableImpl<T>({ columns, data, getRowKey, emptyMessage = 'No data', tableClassName = '' }: CommonTableProps<T>) {
+function CommonTableImpl<T>({
+  columns,
+  data,
+  getRowKey,
+  emptyMessage = 'No data',
+  tableClassName = '',
+  page = 1,
+  pageSize = 10,
+  total,
+  onPageChange,
+  onPageSizeChange,
+  pageSizeOptions = [5, 10, 20, 50]
+}: CommonTableProps<T>) {
+  const isServerPaginated = typeof onPageChange === 'function';
+  const totalCount = typeof total === 'number' ? total : data.length;
+  const currentPage = Math.max(1, page);
+  const currentPageSize = Math.max(1, pageSize);
+  const pageCount = Math.max(1, Math.ceil(totalCount / currentPageSize));
+
+  const displayedData = useMemo(() => {
+    if (isServerPaginated) return data;
+    const start = (currentPage - 1) * currentPageSize;
+    return data.slice(start, start + currentPageSize);
+  }, [data, isServerPaginated, currentPage, currentPageSize]);
+
+  const from = totalCount === 0 ? 0 : (currentPage - 1) * currentPageSize + 1;
+  const to = Math.min(totalCount, currentPage * currentPageSize);
+
   if (!data || data.length === 0) {
     return (
       <div className="bg-white border border-gray-200 rounded-xl p-6 text-sm text-gray-600 text-center">
@@ -37,7 +71,7 @@ function CommonTableImpl<T>({ columns, data, getRowKey, emptyMessage = 'No data'
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-200">
-          {data.map((row, index) => (
+          {displayedData.map((row, index) => (
             <tr key={getRowKey(row, index)} className="hover:bg-gray-50">
               {columns.map(col => (
                 <td key={col.key} className={`px-4 py-3 ${col.className || ''}`}>
@@ -52,6 +86,42 @@ function CommonTableImpl<T>({ columns, data, getRowKey, emptyMessage = 'No data'
           ))}
         </tbody>
       </table>
+      {/* Pagination */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3">
+        <div className="text-xs text-gray-600">{from}–{to} of {totalCount}</div>
+        <div className="flex items-center gap-3">
+          <label className="text-xs text-gray-600">Rows per page</label>
+          <select
+            className="rounded-md border border-gray-300 px-2 py-1 text-sm bg-white"
+            value={currentPageSize}
+            onChange={(e) => onPageSizeChange ? onPageSizeChange(Number(e.target.value)) : undefined}
+            disabled={!onPageSizeChange}
+          >
+            {pageSizeOptions.map(opt => (
+              <option key={opt} value={opt}>{opt}</option>
+            ))}
+          </select>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              className="rounded-md border border-gray-300 px-2 py-1 text-sm hover:bg-gray-50 disabled:opacity-50"
+              onClick={() => onPageChange && onPageChange(Math.max(1, currentPage - 1))}
+              disabled={currentPage <= 1 || !onPageChange}
+            >
+              Prev
+            </button>
+            <span className="text-xs text-gray-700 px-2">Page {currentPage} of {pageCount}</span>
+            <button
+              type="button"
+              className="rounded-md border border-gray-300 px-2 py-1 text-sm hover:bg-gray-50 disabled:opacity-50"
+              onClick={() => onPageChange && onPageChange(Math.min(pageCount, currentPage + 1))}
+              disabled={currentPage >= pageCount || !onPageChange}
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

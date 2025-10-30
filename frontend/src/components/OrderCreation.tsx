@@ -200,7 +200,7 @@ const OrderCreation: React.FC = () => {
 
         <div className="flex items-center justify-between border-t border-gray-200 pt-3">
           <p className="text-lg font-semibold">Total: ${calculateTotal().toFixed(2)}</p>
-          <button type="submit" disabled={!formData.userId || formData.items.length === 0} className="inline-flex items-center rounded-md bg-gray-900 px-4 py-2 text-white hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed">Create Order</button>
+          <button type="submit" disabled={!formData.userId || formData.items.length === 0} className="inline-flex items-center rounded-md bg-green-600 px-4 py-2 text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed">Create Order</button>
         </div>
       </form>
       <div className="space-y-3">

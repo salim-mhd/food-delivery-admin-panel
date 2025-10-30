@@ -3,6 +3,7 @@ import usersReducer from './slices/usersSlice';
 import categoriesReducer from './slices/categoriesSlice';
 import productsReducer from './slices/productsSlice';
 import ordersReducer from './slices/ordersSlice';
+import dashboardReducer from './slices/dashboardSlice';
 
 export const store = configureStore({
   reducer: {
@@ -10,6 +11,7 @@ export const store = configureStore({
     categories: categoriesReducer,
     products: productsReducer,
     orders: ordersReducer,
+    dashboard: dashboardReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
